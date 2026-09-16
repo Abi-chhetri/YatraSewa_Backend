@@ -23,4 +23,26 @@ describe("Vehicle Validation", () => {
       message: "vehicle data is valid",
     });
   });
+
+  it("should reject invalid vehicle data", async()=>{
+    const response =await request(app)
+    .post("/api/v1/vehicle")
+    .send({
+        vehicle_id: 1,
+        vehicle_type: "AC",
+        vehicle_manufactured_year: 2024,
+        vehicle_manufacturer: "Toyota",
+        vehicle_model: "Coaster",
+        seat_capacity: "25",
+        vehicle_status: "active",
+    })
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+        success: false,
+        message: "validation failed",
+        error: expect.any(Array),
+    });
+  })
 });
