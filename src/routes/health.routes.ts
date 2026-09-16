@@ -15,9 +15,9 @@ router.get("/health",(req, res)=>{
 router.post("/vehicle",
     validate(vehicleSchema),
     (req, res)=>{
-    res.status(200).json({
+    res.status(201).json({
         success : true,
-        message : " vehicle data is valid"
+        message : "vehicle data is valid"
     })
 })
 
