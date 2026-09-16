@@ -5,6 +5,7 @@ import cors from "cors"
 import helmet from "helmet"
 import { apiRateLimiter } from "./middlewares/rate-limit.middleware.js";
 import errorMiddlWare from "./middlewares/error.middleware.js";
+import vehicleRouter from "./routes/vehicle.route.js"
 
 const app=express();
 //middlewares
@@ -21,6 +22,7 @@ app.use(apiRateLimiter); //api gate keeper 1 client = 100 request/15 min
 
 //routing 
 app.use("/api/v1",healthRouter);
+app.use("/api/v1",vehicleRouter);
 
 //error handler
 app.use(errorMiddlWare);
