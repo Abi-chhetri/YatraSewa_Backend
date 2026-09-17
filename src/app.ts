@@ -6,6 +6,8 @@ import helmet from "helmet"
 import { apiRateLimiter } from "./middlewares/rate-limit.middleware.js";
 import errorMiddlWare from "./middlewares/error.middleware.js";
 import vehicleRouter from "./routes/vehicle.route.js"
+import swaggerUi from "swagger-ui-express"
+import { swaggerSpec } from "./config/swagger.js";
 
 const app=express();
 //middlewares
@@ -19,6 +21,9 @@ app.use(logger);
 
 //rate limiter comes before api gateway/route
 app.use(apiRateLimiter); //api gate keeper 1 client = 100 request/15 min
+
+//Api documentation
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //routing 
 app.use("/api/v1",healthRouter);
