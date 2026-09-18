@@ -144,3 +144,13 @@ model CompanyApproval {
   company  Company @relation(fields: [company_id], references: [company_id])
   reviewer User    @relation("CompanyApprovalReviewer", fields: [reviewed_by], references: [user_id])
 }
+
+model Vehicle {
+  vehicle_id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vehicle_type              String   @db.VarChar(20)
+  vehicle_manufactured_year Int
+  vehicle_manufacturer      String   @db.VarChar(100)
+  vehicle_model             String   @db.VarChar(100)
+  seat_capacity             Int
+  vehicle_status            String   @db.VarChar(30)
+}

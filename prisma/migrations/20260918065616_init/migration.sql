@@ -134,6 +134,19 @@ CREATE TABLE "CompanyApproval" (
     CONSTRAINT "CompanyApproval_pkey" PRIMARY KEY ("approval_id")
 );
 
+-- CreateTable
+CREATE TABLE "Vehicle" (
+    "vehicle_id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "vehicle_type" VARCHAR(20) NOT NULL,
+    "vehicle_manufactured_year" INTEGER NOT NULL,
+    "vehicle_manufacturer" VARCHAR(100) NOT NULL,
+    "vehicle_model" VARCHAR(100) NOT NULL,
+    "seat_capacity" INTEGER NOT NULL,
+    "vehicle_status" VARCHAR(30) NOT NULL,
+
+    CONSTRAINT "Vehicle_pkey" PRIMARY KEY ("vehicle_id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_role_name_key" ON "Role"("role_name");
 
