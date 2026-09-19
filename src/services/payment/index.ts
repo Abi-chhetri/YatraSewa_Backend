@@ -1,9 +1,6 @@
 // src/services/payment/index.ts
 
-export {
-  initiatePayment,
-  verifyPayment,
-} from "./payment.service.js";
+export { initiatePayment, verifyPayment } from "./payment.service.js";
 
 export type {
   PaymentGateway,

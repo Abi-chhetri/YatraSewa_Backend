@@ -3,10 +3,7 @@
 import { Resend } from "resend";
 import { z } from "zod";
 
-import {
-  env,
-  requireEnv,
-} from "../../config/env.js";
+import { env, requireEnv } from "../../config/env.js";
 
 import {
   IntegrationError,
@@ -24,8 +21,7 @@ export interface SentEmail {
   id: string;
 }
 
-const emailListSchema =
-  z.array(z.email()).min(1);
+const emailListSchema = z.array(z.email()).min(1);
 
 let resendClient: Resend | null = null;
 
@@ -37,79 +33,55 @@ export async function sendTransactionalEmail(
   const request = buildEmailRequest(input);
 
   try {
-    const response =
-      await getResendClient()
-        .emails
-        .send(request);
+    const response = await getResendClient().emails.send(request);
 
-    return parseResendResponse(
-      response.data,
-      response.error,
-    );
+    return parseResendResponse(response.data, response.error);
   } catch (error) {
     throw toIntegrationError(error, {
       provider: "resend",
       code: "NETWORK_ERROR",
-      message:
-        "Failed to send email through Resend.",
+      message: "Failed to send email through Resend.",
       retryable: true,
     });
   }
 }
 
-function validateEmailInput(
-  input: SendEmailInput,
-): void {
-  if (
-    !input ||
-    !Array.isArray(input.to) ||
-    input.to.length === 0
-  ) {
+function validateEmailInput(input: SendEmailInput): void {
+  if (!input || !Array.isArray(input.to) || input.to.length === 0) {
     throw new IntegrationError({
       provider: "resend",
       code: "INVALID_INPUT",
-      message:
-        "At least one email recipient is required.",
+      message: "At least one email recipient is required.",
       statusCode: 400,
     });
   }
 
-  const recipients =
-    emailListSchema.safeParse(input.to);
+  const recipients = emailListSchema.safeParse(input.to);
 
   if (!recipients.success) {
     throw new IntegrationError({
       provider: "resend",
       code: "INVALID_INPUT",
-      message:
-        "At least one valid email recipient is required.",
+      message: "At least one valid email recipient is required.",
       statusCode: 400,
       cause: recipients.error,
     });
   }
 
-  if (
-    typeof input.subject !== "string" ||
-    input.subject.trim() === ""
-  ) {
+  if (typeof input.subject !== "string" || input.subject.trim() === "") {
     throw new IntegrationError({
       provider: "resend",
       code: "INVALID_INPUT",
-      message:
-        "Email subject cannot be empty.",
+      message: "Email subject cannot be empty.",
       statusCode: 400,
     });
   }
 
-  if (
-    !input.html &&
-    !input.text
-  ) {
+  if (!input.html && !input.text) {
     throw new IntegrationError({
       provider: "resend",
       code: "EMAIL_BODY_MISSING",
-      message:
-        "Email must include html or text content.",
+      message: "Email must include html or text content.",
       statusCode: 400,
     });
   }
@@ -135,11 +107,7 @@ function getResendClient(): Resend {
   }
 
   resendClient = new Resend(
-    requireEnv(
-      env.RESEND_API_KEY,
-      "RESEND_API_KEY",
-      "resend",
-    ),
+    requireEnv(env.RESEND_API_KEY, "RESEND_API_KEY", "resend"),
   );
 
   return resendClient;
@@ -153,8 +121,7 @@ function parseResendResponse(
     throw new IntegrationError({
       provider: "resend",
       code: "PROVIDER_REJECTED",
-      message:
-        "Resend rejected the email request.",
+      message: "Resend rejected the email request.",
       statusCode: 502,
       cause: error,
     });
@@ -164,8 +131,7 @@ function parseResendResponse(
     throw new IntegrationError({
       provider: "resend",
       code: "INVALID_RESPONSE",
-      message:
-        "Resend returned an invalid response.",
+      message: "Resend returned an invalid response.",
       statusCode: 502,
       cause: data,
     });

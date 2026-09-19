@@ -4,25 +4,15 @@ import { z } from "zod";
 
 import { env } from "../../config/env.js";
 
-import {
-  IntegrationError,
-} from "../../utils/integration-error.js";
+import { IntegrationError } from "../../utils/integration-error.js";
 
-import {
-  connectIpsService,
-} from "./connect-ips.service.js";
+import { connectIpsService } from "./connect-ips.service.js";
 
-import {
-  esewaService,
-} from "./esewa.service.js";
+import { esewaService } from "./esewa.service.js";
 
-import {
-  fonepayService,
-} from "./fonepay.service.js";
+import { fonepayService } from "./fonepay.service.js";
 
-import {
-  khaltiService,
-} from "./khalti.service.js";
+import { khaltiService } from "./khalti.service.js";
 
 import {
   paymentGatewaySchema,
@@ -36,10 +26,7 @@ import {
   type PaymentVerificationResult,
 } from "./payment.types.js";
 
-const gatewayClients: Record<
-  PaymentGateway,
-  PaymentGatewayClient
-> = {
+const gatewayClients: Record<PaymentGateway, PaymentGatewayClient> = {
   esewa: esewaService,
   khalti: khaltiService,
   fonepay: fonepayService,
@@ -49,98 +36,65 @@ const gatewayClients: Record<
 export async function initiatePayment(
   rawInput: unknown,
 ): Promise<PaymentInitiationResult> {
-  const input =
-    parsePaymentInput(
-      paymentInitiationSchema,
-      rawInput,
-    );
+  const input = parsePaymentInput(paymentInitiationSchema, rawInput);
 
   if (isPaymentMockEnabled()) {
     return createMockInitiation(input);
   }
 
-  return gatewayClients[
-    input.gateway
-  ].initiatePayment(input);
+  return gatewayClients[input.gateway].initiatePayment(input);
 }
 
 export async function verifyPayment(
   rawInput: unknown,
 ): Promise<PaymentVerificationResult> {
-  const input =
-    parsePaymentInput(
-      paymentVerificationSchema,
-      rawInput,
-    );
+  const input = parsePaymentInput(paymentVerificationSchema, rawInput);
 
   if (isPaymentMockEnabled()) {
     return createMockVerification(input);
   }
 
-  return gatewayClients[
-    input.gateway
-  ].verifyPayment(input);
+  return gatewayClients[input.gateway].verifyPayment(input);
 }
 
-function parsePaymentInput<T>(
-  schema: z.ZodType<T>,
-  rawInput: unknown,
-): T {
-  const result =
-    schema.safeParse(rawInput);
+function parsePaymentInput<T>(schema: z.ZodType<T>, rawInput: unknown): T {
+  const result = schema.safeParse(rawInput);
 
   if (result.success) {
     return result.data;
   }
 
-  const provider =
-    getPaymentErrorProvider(rawInput);
+  const provider = getPaymentErrorProvider(rawInput);
 
   throw new IntegrationError({
     provider,
     code: "INVALID_INPUT",
-    message:
-      result.error.issues
-        .map(
-          (issue) =>
-            `${issue.path.join(".") || "(root)"}: ${issue.message}`,
-        )
-        .join("; "),
+    message: result.error.issues
+      .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+      .join("; "),
     statusCode: 400,
     cause: result.error,
   });
 }
 
-function getPaymentErrorProvider(
-  rawInput: unknown,
-) {
-  if (
-    typeof rawInput !== "object" ||
-    rawInput === null
-  ) {
+function getPaymentErrorProvider(rawInput: unknown) {
+  if (typeof rawInput !== "object" || rawInput === null) {
     return "payment" as const;
   }
 
-  const candidate =
-    (rawInput as {
+  const candidate = (
+    rawInput as {
       gateway?: unknown;
-    }).gateway;
+    }
+  ).gateway;
 
-  const result =
-    paymentGatewaySchema.safeParse(
-      candidate,
-    );
+  const result = paymentGatewaySchema.safeParse(candidate);
 
-  return result.success
-    ? result.data
-    : ("payment" as const);
+  return result.success ? result.data : ("payment" as const);
 }
 
 function isPaymentMockEnabled(): boolean {
-  return (
-    env.PAYMENT_MOCK_ENABLED === "true" &&
-    env.NODE_ENV !== "production"
-  );
+  return env.PAYMENT_MOCK_ENABLED === "true" && env.NODE_ENV !== "production";
 }
 
 function createMockInitiation(
@@ -149,8 +103,7 @@ function createMockInitiation(
   return {
     gateway: input.gateway,
     orderId: input.orderId,
-    gatewayReference:
-      `mock_${input.orderId}`,
+    gatewayReference: `mock_${input.orderId}`,
     raw: {
       mocked: true,
     },

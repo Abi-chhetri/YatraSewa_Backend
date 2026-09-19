@@ -1,17 +1,10 @@
 // src/services/storage/storage.service.ts
 
-import {
-  v2 as cloudinary,
-} from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
-import {
-  env,
-  requireEnv,
-} from "../../config/env.js";
+import { env, requireEnv } from "../../config/env.js";
 
-import {
-  IntegrationError,
-} from "../../utils/integration-error.js";
+import { IntegrationError } from "../../utils/integration-error.js";
 
 export interface UploadDocumentInput {
   fileBuffer: Buffer;
@@ -26,36 +19,26 @@ export interface StoredDocument {
   bytes?: number;
 }
 
-const VEHICLE_DOCUMENT_FOLDER =
-  "vehicle-documents";
+const VEHICLE_DOCUMENT_FOLDER = "vehicle-documents";
 
-const USER_DOCUMENT_FOLDER =
-  "user-documents";
+const USER_DOCUMENT_FOLDER = "user-documents";
 
-const MAX_UPLOAD_BYTES =
-  10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
-const SIGNED_URL_TTL_SECONDS =
-  60 * 60;
+const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 let cloudinaryConfigured = false;
 
 export function uploadVehicleDocument(
   input: UploadDocumentInput,
 ): Promise<StoredDocument> {
-  return uploadVerificationDocument(
-    input,
-    VEHICLE_DOCUMENT_FOLDER,
-  );
+  return uploadVerificationDocument(input, VEHICLE_DOCUMENT_FOLDER);
 }
 
 export function uploadUserDocument(
   input: UploadDocumentInput,
 ): Promise<StoredDocument> {
-  return uploadVerificationDocument(
-    input,
-    USER_DOCUMENT_FOLDER,
-  );
+  return uploadVerificationDocument(input, USER_DOCUMENT_FOLDER);
 }
 
 async function uploadVerificationDocument(
@@ -66,12 +49,11 @@ async function uploadVerificationDocument(
 
   configureCloudinary();
 
-  const result =
-    await uploadBufferToCloudinary(
-      input.fileBuffer,
-      folder,
-      input.publicId,
-    );
+  const result = await uploadBufferToCloudinary(
+    input.fileBuffer,
+    folder,
+    input.publicId,
+  );
 
   return buildStoredDocument(result);
 }
@@ -79,38 +61,23 @@ async function uploadVerificationDocument(
 export function getSignedDocumentUrl(
   publicId: string,
   format: string,
-  resourceType:
-    | "image"
-    | "raw"
-    | "video" = "raw",
+  resourceType: "image" | "raw" | "video" = "raw",
 ): string {
   configureCloudinary();
 
-  return cloudinary.utils.private_download_url(
-    publicId,
-    format,
-    {
-      resource_type: resourceType,
-      type: "authenticated",
-      expires_at:
-        Math.floor(Date.now() / 1000) +
-        SIGNED_URL_TTL_SECONDS,
-    },
-  );
+  return cloudinary.utils.private_download_url(publicId, format, {
+    resource_type: resourceType,
+    type: "authenticated",
+    expires_at: Math.floor(Date.now() / 1000) + SIGNED_URL_TTL_SECONDS,
+  });
 }
 
-function validateUpload(
-  input: UploadDocumentInput,
-): void {
-  if (
-    !input ||
-    !Buffer.isBuffer(input.fileBuffer)
-  ) {
+function validateUpload(input: UploadDocumentInput): void {
+  if (!input || !Buffer.isBuffer(input.fileBuffer)) {
     throw new IntegrationError({
       provider: "cloudinary",
       code: "INVALID_INPUT",
-      message:
-        "A file buffer is required.",
+      message: "A file buffer is required.",
       statusCode: 400,
     });
   }
@@ -119,21 +86,16 @@ function validateUpload(
     throw new IntegrationError({
       provider: "cloudinary",
       code: "EMPTY_UPLOAD",
-      message:
-        "Upload buffer is empty.",
+      message: "Upload buffer is empty.",
       statusCode: 400,
     });
   }
 
-  if (
-    input.fileBuffer.length >
-    MAX_UPLOAD_BYTES
-  ) {
+  if (input.fileBuffer.length > MAX_UPLOAD_BYTES) {
     throw new IntegrationError({
       provider: "cloudinary",
       code: "INVALID_INPUT",
-      message:
-        "File exceeds the upload limit.",
+      message: "File exceeds the upload limit.",
       statusCode: 413,
     });
   }
@@ -171,74 +133,60 @@ function uploadBufferToCloudinary(
   folder: string,
   publicId?: string,
 ): Promise<any> {
-  return new Promise(
-    (resolve, reject) => {
-      const uploadStream =
-        cloudinary.uploader.upload_stream(
-          {
-            folder,
-            public_id: publicId,
-            resource_type: "auto",
-            type: "authenticated",
-            overwrite: false,
-          },
-          (error, result) => {
-            if (error) {
-              reject(
-                new IntegrationError({
-                  provider: "cloudinary",
-                  code: "PROVIDER_REJECTED",
-                  message:
-                    "Cloudinary rejected the upload.",
-                  statusCode: 502,
-                  cause: error,
-                }),
-              );
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: publicId,
+        resource_type: "auto",
+        type: "authenticated",
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(
+            new IntegrationError({
+              provider: "cloudinary",
+              code: "PROVIDER_REJECTED",
+              message: "Cloudinary rejected the upload.",
+              statusCode: 502,
+              cause: error,
+            }),
+          );
 
-              return;
-            }
+          return;
+        }
 
-            if (!result?.public_id) {
-              reject(
-                new IntegrationError({
-                  provider: "cloudinary",
-                  code: "INVALID_RESPONSE",
-                  message:
-                    "Cloudinary returned an invalid response.",
-                  statusCode: 502,
-                  cause: result,
-                }),
-              );
+        if (!result?.public_id) {
+          reject(
+            new IntegrationError({
+              provider: "cloudinary",
+              code: "INVALID_RESPONSE",
+              message: "Cloudinary returned an invalid response.",
+              statusCode: 502,
+              cause: result,
+            }),
+          );
 
-              return;
-            }
+          return;
+        }
 
-            resolve(result);
-          },
-        );
+        resolve(result);
+      },
+    );
 
-      uploadStream.end(fileBuffer);
-    },
-  );
+    uploadStream.end(fileBuffer);
+  });
 }
 
-function buildStoredDocument(
-  result: any,
-): StoredDocument {
-  const resourceType =
-    result.resource_type ?? "raw";
+function buildStoredDocument(result: any): StoredDocument {
+  const resourceType = result.resource_type ?? "raw";
 
-  const format =
-    result.format ?? "bin";
+  const format = result.format ?? "bin";
 
   return {
     publicId: result.public_id,
-    signedUrl:
-      getSignedDocumentUrl(
-        result.public_id,
-        format,
-        resourceType,
-      ),
+    signedUrl: getSignedDocumentUrl(result.public_id, format, resourceType),
     resourceType,
     format: result.format,
     bytes: result.bytes,

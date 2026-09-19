@@ -5,14 +5,11 @@ import {
   type IntegrationProvider,
 } from "../../utils/integration-error.js";
 
-export function throwPaymentUnavailable(
-  provider: IntegrationProvider,
-): never {
+export function throwPaymentUnavailable(provider: IntegrationProvider): never {
   throw new IntegrationError({
     provider,
     code: "PAYMENT_NOT_IMPLEMENTED",
-    message:
-      "Payment operation is unavailable.",
+    message: "Payment operation is unavailable.",
     statusCode: 501,
   });
 }

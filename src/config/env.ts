@@ -8,35 +8,20 @@ import {
   type IntegrationProvider,
 } from "../utils/integration-error.js";
 
-const emptyToUndefined = (
-  value: unknown,
-): unknown => {
-  if (
-    typeof value === "string" &&
-    value.trim() === ""
-  ) {
+const emptyToUndefined = (value: unknown): unknown => {
+  if (typeof value === "string" && value.trim() === "") {
     return undefined;
   }
 
   return value;
 };
 
-const optionalString = z.preprocess(
-  emptyToUndefined,
-  z.string().optional(),
-);
+const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
 
-const optionalUrl = z.preprocess(
-  emptyToUndefined,
-  z.url().optional(),
-);
+const optionalUrl = z.preprocess(emptyToUndefined, z.url().optional());
 
 const envSchema = z.object({
-  PORT: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(3000),
+  PORT: z.coerce.number().int().positive().default(3000),
 
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -46,8 +31,7 @@ const envSchema = z.object({
 
   PAYMENT_MOCK_ENABLED: z.preprocess(
     emptyToUndefined,
-    z.enum(["true", "false"])
-      .default("false"),
+    z.enum(["true", "false"]).default("false"),
   ),
 
   // Resend
@@ -88,18 +72,13 @@ const envSchema = z.object({
   CONNECT_IPS_SECRET: optionalString,
 });
 
-const parsed = envSchema.safeParse(
-  process.env,
-);
+const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   throw new Error(
     "Invalid environment configuration: " +
       parsed.error.issues
-        .map(
-          (issue) =>
-            `${issue.path.join(".")}: ${issue.message}`,
-        )
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
         .join("; "),
   );
 }
@@ -111,15 +90,11 @@ export function requireEnv(
   name: string,
   provider: IntegrationProvider,
 ): string {
-  if (
-    value === undefined ||
-    value.trim() === ""
-  ) {
+  if (value === undefined || value.trim() === "") {
     throw new IntegrationError({
       provider,
       code: "NOT_CONFIGURED",
-      message:
-        `Missing environment variable: ${name}`,
+      message: `Missing environment variable: ${name}`,
       statusCode: 503,
     });
   }
